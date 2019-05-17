@@ -1,0 +1,37 @@
+---
+title: "ESA listings by taxonomic group"
+author: "Jacob Malcom"
+date: "5/16/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggthemes)
+library(lubridate)
+library(tidyverse)
+
+dat <- readLines("https://ecos.fws.gov/ecp/pullreports/catalog/species/report/species/export?format=htmltable&distinct=true&columns=%2Fspecies%40cn%2Csn%2Cstatus%2Cdesc%2Clisting_date%2Ccountry%3B%2Fspecies%2Ftaxonomy%40group%3B%2Fspecies%2Ffws_office%40name&sort=%2Fspecies%40sn%20asc%3B%2Fspecies%40status%20asc%3B%2Fspecies%40country%20desc&filter=%2Fspecies%40status_category%20in%20(%27Listed%27)&filter=%2Fspecies%40country%20!%3D%20%27Foreign%27") %>%
+  xml2::read_html() %>%
+  rvest::html_node("table") %>%
+  rvest::html_table()
+
+names(dat) <- gsub(names(dat), pattern = " ", replacement = "_")
+dat$ESA_Listing_Date <- mdy(dat$ESA_Listing_Date)
+```
+
+The US Fish and Wildlife Service has been developing a new web service to make their data more accessible; this is a basic test of that real-time FWS data feed.
+
+```{r, echo = FALSE}
+ggplot(dat, aes(x = reorder(Taxonomic_Group, Taxonomic_Group, function(x) -length(x)))) +
+  geom_bar(stat = "count") + 
+  labs(x = "",
+       y = "# Species") +
+  theme_minimal() +
+  ggtitle("Distribution of ESA-listed species among taxonomic groups", 
+          subtitle = "52% of listed species are plants") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
